@@ -1,73 +1,79 @@
-# React + TypeScript + Vite
+# Quiz App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive quiz application built with React + TypeScript (Vite) and an Express API backend. Questions are pushed to the server via a POST request and the frontend automatically updates to display them.
 
-Currently, two official plugins are available:
+## How it works
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The app has two parts that run simultaneously:
 
-## React Compiler
+- **Frontend** (`localhost:5173`) — a React app that displays the current question, answer options, and feedback
+- **API server** (`localhost:3001`) — an Express server that stores the active question in memory
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Flow
 
-## Expanding the ESLint configuration
+1. Send a question to the API via Postman (or any HTTP client)
+2. The server stores it and returns the formatted question
+3. The frontend polls `GET /question` every 3 seconds and re-renders automatically
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Running the app
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Install dependencies:
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Start the API server (in one terminal):
+```bash
+npm run server
 ```
+
+Start the frontend (in another terminal):
+```bash
+npm run dev
+```
+
+Then open `http://localhost:5173` in your browser.
+
+## API
+
+### `POST /question`
+
+Loads a new question into the server. The frontend will display it within 3 seconds.
+
+**Request body:**
+```json
+{
+  "question": "What is the time complexity of binary search?",
+  "answers": ["O(n)", "O(log n)", "O(n²)", "O(1)"],
+  "explanations": [
+    "Incorrect — that would be linear search",
+    "Correct — binary search halves the search space each time",
+    "Incorrect — that is bubble sort",
+    "Incorrect — nothing is constant time here"
+  ],
+  "correctAnswer": "O(log n)",
+  "correctExplanation": "Binary search divides the array in half each iteration, giving it O(log n) time complexity.",
+  "topic": "Algorithms",
+  "subtopic": "Searching",
+  "xp": 300,
+  "step": 2,
+  "totalSteps": 5
+}
+```
+
+`topic`, `subtopic`, `xp`, `step`, and `totalSteps` are optional (defaults: General / Knowledge / 100 XP / step 1 of 10).
+
+**Response:** the formatted question object with options assigned letter IDs (A, B, C, D).
+
+---
+
+### `GET /question`
+
+Returns the currently stored question. Used by the frontend to poll for updates. Returns `404` if no question has been posted yet.
+
+## Tech stack
+
+- React 19 + TypeScript
+- Vite (frontend dev server + build)
+- Express 5 (API server)
+- tsx (runs the TypeScript server directly)
