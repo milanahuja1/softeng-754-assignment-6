@@ -1,35 +1,66 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 
-const QUESTION = {
-  topic: 'OOP',
-  subtopic: 'Inheritance',
-  xp: 520,
-  step: 3,
-  totalSteps: 6,
-  text: (
-    <>
-      What does the <span className="keyword">super</span> keyword do in a
-      constructor?
-    </>
-  ),
-  options: [
-    { id: 'A', text: 'Calls the parent constructor' },
-    { id: 'B', text: 'Creates a new instance of Animal' },
-    { id: 'C', text: 'Overrides the parent method' },
-    { id: 'D', text: 'Accesses the static fields' },
-  ],
-  correctId: 'A',
-  explanation:
-    'The super() call must be the first statement in a constructor to ensure the parent class is initialized before the child.',
+interface QuestionData {
+  question: string
+  options: Array<{ id: string; text: string; explanation: string }>
+  correctAnswer: string
+  correctExplanation: string
+  topic: string
+  subtopic: string
+  xp: number
+  step: number
+  totalSteps: number
 }
 
 export default function App() {
+  const [question, setQuestion] = useState<QuestionData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [answered, setAnswered] = useState(false)
 
-  const progress = (QUESTION.step / QUESTION.totalSteps) * 100
-  const isCorrect = selected === QUESTION.correctId
+  useEffect(() => {
+    const fetchQuestion = async () => {
+      try {
+        const res = await fetch('/question')
+        if (!res.ok) throw new Error(res.status === 404 ? 'No question loaded yet — POST one to /question' : 'Failed to fetch question')
+        const data = await res.json()
+        setQuestion(data)
+        setSelected(null)
+        setAnswered(false)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error loading question')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchQuestion()
+    const interval = setInterval(fetchQuestion, 3000)
+    return () => clearInterval(interval)
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="screen">
+        <div style={{ padding: '40px 20px', textAlign: 'center' }}>Loading question...</div>
+      </div>
+    )
+  }
+
+  if (error || !question) {
+    return (
+      <div className="screen">
+        <div style={{ padding: '40px 20px', textAlign: 'center', color: '#ef4444' }}>
+          Error: {error || 'No question loaded'}
+        </div>
+      </div>
+    )
+  }
+
+  const correctId = question.options.find((o) => o.text === question.correctAnswer)?.id
+  const isCorrect = selected === correctId
 
   const handleSelect = (id: string) => {
     if (!answered) setSelected(id)
@@ -43,26 +74,22 @@ export default function App() {
     <div className="screen">
       <div className="header">
         <button className="back-btn">&#8592;</button>
-        <h1 className="title">
-          {QUESTION.topic} &middot; {QUESTION.subtopic}
-        </h1>
-        <div className="xp-badge">&#11088; {QUESTION.xp} XP</div>
+        <h1 className="title">{question.topic} &middot; {question.subtopic}</h1>
+        <div className="xp-badge">&#11088; {question.xp} XP</div>
       </div>
 
       <div className="progress-section">
         <div className="progress-labels">
-          <span className="step-label">
-            STEP {QUESTION.step} OF {QUESTION.totalSteps}
-          </span>
-          <span className="complete-label">{progress}% Complete</span>
+          <span className="step-label">STEP {question.step} OF {question.totalSteps}</span>
+          <span className="complete-label">{Math.round((question.step / question.totalSteps) * 100)}% Complete</span>
         </div>
         <div className="progress-track">
-          <div className="progress-fill" style={{ width: `${progress}%` }} />
+          <div className="progress-fill" style={{ width: `${(question.step / question.totalSteps) * 100}%` }} />
         </div>
       </div>
 
       <div className="card">
-        <p className="question-text">{QUESTION.text}</p>
+        <p className="question-text">{question.question}</p>
 
         <div className="code-block">
           <div className="code-dots">
@@ -99,9 +126,9 @@ export default function App() {
         </div>
 
         <div className="options">
-          {QUESTION.options.map((opt) => {
+          {question.options.map((opt) => {
             const isSelected = selected === opt.id
-            const isRight = opt.id === QUESTION.correctId
+            const isRight = opt.id === correctId
             let cls = 'option'
             if (answered && isSelected) cls += isRight ? ' correct' : ' wrong'
             else if (isSelected) cls += ' selected'
@@ -128,7 +155,7 @@ export default function App() {
             <span className="fb-icon">{isCorrect ? '✓' : '✗'}</span>
             <span className="fb-title">{isCorrect ? 'Correct!' : 'Incorrect'}</span>
           </div>
-          <p className="fb-text">{QUESTION.explanation}</p>
+          <p className="fb-text">{question.correctExplanation}</p>
           <button className="next-btn">Next question &#8594;</button>
         </div>
       )}

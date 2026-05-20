@@ -5,17 +5,46 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
+interface StoredQuestion {
+  question: string
+  options: Array<{ id: string; text: string; explanation: string }>
+  correctAnswer: string
+  correctExplanation: string
+  topic: string
+  subtopic: string
+  xp: number
+  step: number
+  totalSteps: number
+}
+
+let currentQuestion: StoredQuestion | null = null
+
 interface QuestionBody {
   question: string
   answers: string[]
   explanations: string[]
   correctAnswer: string
   correctExplanation: string
+  topic?: string
+  subtopic?: string
+  xp?: number
+  step?: number
+  totalSteps?: number
 }
 
 app.post('/question', (req: Request, res: Response) => {
-  const { question, answers, explanations, correctAnswer, correctExplanation } =
-    req.body as QuestionBody
+  const {
+    question,
+    answers,
+    explanations,
+    correctAnswer,
+    correctExplanation,
+    topic = 'General',
+    subtopic = 'Knowledge',
+    xp = 100,
+    step = 1,
+    totalSteps = 10,
+  } = req.body as QuestionBody
 
   if (!question || !answers?.length || !explanations?.length || !correctAnswer || !correctExplanation) {
     res.status(400).json({ error: 'Missing required fields: question, answers, explanations, correctAnswer, correctExplanation' })
@@ -32,16 +61,31 @@ app.post('/question', (req: Request, res: Response) => {
     return
   }
 
-  res.json({
+  currentQuestion = {
     question,
     options: answers.map((text, i) => ({
-      id: String.fromCharCode(65 + i), // A, B, C, D ...
+      id: String.fromCharCode(65 + i),
       text,
       explanation: explanations[i],
     })),
     correctAnswer,
     correctExplanation,
-  })
+    topic,
+    subtopic,
+    xp,
+    step,
+    totalSteps,
+  }
+
+  res.json(currentQuestion)
+})
+
+app.get('/question', (_req: Request, res: Response) => {
+  if (!currentQuestion) {
+    res.status(404).json({ error: 'No question loaded yet' })
+    return
+  }
+  res.json(currentQuestion)
 })
 
 const PORT = 3001
