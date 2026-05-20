@@ -43,22 +43,29 @@ Loads a new question into the server. The frontend will display it within 3 seco
 **Request body:**
 ```json
 {
-  "question": "What is the time complexity of binary search?",
-  "answers": ["O(n)", "O(log n)", "O(n²)", "O(1)"],
-  "explanations": [
-    "Incorrect — that would be linear search",
-    "Correct — binary search halves the search space each time",
-    "Incorrect — that is bubble sort",
-    "Incorrect — nothing is constant time here"
+  "question": "What does the `super()` call do in the Dog constructor?",
+  "code": "public class Dog extends Animal {\n    public Dog() {\n        super(); // ?\n        System.out.println(\"Dog created\");\n    }\n}",
+  "answers": [
+    "Calls the Animal constructor",
+    "Creates a new Animal object",
+    "Overrides the Animal class",
+    "Deletes the parent class"
   ],
-  "correctAnswer": "O(log n)",
-  "correctExplanation": "Binary search divides the array in half each iteration, giving it O(log n) time complexity.",
-  "topic": "Algorithms",
-  "subtopic": "Searching",
-  "xp": 300,
-  "step": 2,
-  "totalSteps": 5
+  "explanations": [
+    "super() invokes the parent class constructor, initializing inherited fields.",
+    "super() does not create a new object — the Dog object is already being created.",
+    "super() does not override anything; that is done via method overriding.",
+    "super() has no destructive effect on the parent class."
+  ],
+  "correctAnswer": "Calls the Animal constructor",
+  "correctExplanation": "super() calls the constructor of the parent class (Animal), allowing inherited state to be initialized before Dog-specific setup runs.",
+  "topic": "Java",
+  "subtopic": "Inheritance",
+  "xp": 150,
+  "step": 3,
+  "totalSteps": 10
 }
+
 ```
 
 `topic`, `subtopic`, `xp`, `step`, and `totalSteps` are optional (defaults: General / Knowledge / 100 XP / step 1 of 10).

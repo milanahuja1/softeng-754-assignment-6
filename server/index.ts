@@ -7,6 +7,7 @@ app.use(express.json())
 
 interface StoredQuestion {
   question: string
+  code?: string
   options: Array<{ id: string; text: string; explanation: string }>
   correctAnswer: string
   correctExplanation: string
@@ -21,6 +22,7 @@ let currentQuestion: StoredQuestion | null = null
 
 interface QuestionBody {
   question: string
+  code?: string
   answers: string[]
   explanations: string[]
   correctAnswer: string
@@ -35,6 +37,7 @@ interface QuestionBody {
 app.post('/question', (req: Request, res: Response) => {
   const {
     question,
+    code,
     answers,
     explanations,
     correctAnswer,
@@ -63,6 +66,7 @@ app.post('/question', (req: Request, res: Response) => {
 
   currentQuestion = {
     question,
+    code,
     options: answers.map((text, i) => ({
       id: String.fromCharCode(65 + i),
       text,
@@ -89,6 +93,11 @@ app.get('/question', (_req: Request, res: Response) => {
 })
 
 const PORT = 3001
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`API server running on http://localhost:${PORT}`)
+})
+
+server.on('error', (err: NodeJS.ErrnoException) => {
+  console.error('Failed to start server:', err.message)
+  process.exit(1)
 })

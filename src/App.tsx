@@ -3,6 +3,7 @@ import './App.css'
 
 interface QuestionData {
   question: string
+  code?: string
   options: Array<{ id: string; text: string; explanation: string }>
   correctAnswer: string
   correctExplanation: string
@@ -11,6 +12,15 @@ interface QuestionData {
   xp: number
   step: number
   totalSteps: number
+}
+
+function renderInlineCode(text: string) {
+  const parts = text.split(/(`[^`]+`)/)
+  return parts.map((part, i) =>
+    part.startsWith('`') && part.endsWith('`')
+      ? <code key={i} className="inline-code">{part.slice(1, -1)}</code>
+      : part
+  )
 }
 
 export default function App() {
@@ -89,41 +99,20 @@ export default function App() {
       </div>
 
       <div className="card">
-        <p className="question-text">{question.question}</p>
+        <p className="question-text">{renderInlineCode(question.question)}</p>
 
-        <div className="code-block">
-          <div className="code-dots">
-            <span className="dot dot-red" />
-            <span className="dot dot-yellow" />
-            <span className="dot dot-green" />
+        {question.code && (
+          <div className="code-block">
+            <div className="code-dots">
+              <span className="dot dot-red" />
+              <span className="dot dot-yellow" />
+              <span className="dot dot-green" />
+            </div>
+            <pre className="code-pre">
+              <code>{question.code}</code>
+            </pre>
           </div>
-          <pre className="code-pre">
-            <code>
-              <span className="kw">public class </span>
-              <span className="cls">Dog </span>
-              <span className="kw">extends </span>
-              <span className="cls">Animal </span>
-              {'{\n'}
-              {'    '}
-              <span className="kw">public </span>
-              <span className="fn">Dog</span>
-              {'() {\n'}
-              {'        '}
-              <span className="fn">super</span>
-              {'(); '}
-              <span className="comment">// ?</span>
-              {'\n'}
-              {'        '}
-              <span className="cls">System</span>
-              {'.out.'}
-              <span className="fn">println</span>
-              {'('}
-              <span className="str">"Dog created"</span>
-              {');\n'}
-              {'    }\n}'}
-            </code>
-          </pre>
-        </div>
+        )}
 
         <div className="options">
           {question.options.map((opt) => {
