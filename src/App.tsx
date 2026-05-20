@@ -36,9 +36,13 @@ export default function App() {
         const res = await fetch('/question')
         if (!res.ok) throw new Error(res.status === 404 ? 'No question loaded yet — POST one to /question' : 'Failed to fetch question')
         const data = await res.json()
-        setQuestion(data)
-        setSelected(null)
-        setAnswered(false)
+        setQuestion(prev => {
+          if (!prev || prev.question !== data.question) {
+            setSelected(null)
+            setAnswered(false)
+          }
+          return data
+        })
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error loading question')
       } finally {
