@@ -1,122 +1,157 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useState, useEffect } from 'react'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+interface QuestionData {
+  question: string
+  code?: string
+  options: Array<{ id: string; text: string; explanation: string }>
+  correctAnswer: string
+  correctExplanation: string
+  topic: string
+  subtopic: string
+  xp: number
+  step: number
+  totalSteps: number
+}
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+function renderInlineCode(text: string) {
+  const parts = text.split(/(`[^`]+`)/)
+  return parts.map((part, i) =>
+    part.startsWith('`') && part.endsWith('`')
+      ? <code key={i} className="inline-code">{part.slice(1, -1)}</code>
+      : part
   )
 }
 
-export default App
+export default function App() {
+  const [question, setQuestion] = useState<QuestionData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selected, setSelected] = useState<string | null>(null)
+  const [answered, setAnswered] = useState(false)
+
+  useEffect(() => {
+    const fetchQuestion = async () => {
+      try {
+        const res = await fetch('/question')
+        if (!res.ok) throw new Error(res.status === 404 ? 'No question loaded yet — POST one to /question' : 'Failed to fetch question')
+        const data = await res.json()
+        setQuestion(prev => {
+          if (!prev || prev.question !== data.question) {
+            setSelected(null)
+            setAnswered(false)
+          }
+          return data
+        })
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error loading question')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchQuestion()
+    const interval = setInterval(fetchQuestion, 3000)
+    return () => clearInterval(interval)
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="screen">
+        <div style={{ padding: '40px 20px', textAlign: 'center' }}>Loading question...</div>
+      </div>
+    )
+  }
+
+  if (error || !question) {
+    return (
+      <div className="screen">
+        <div style={{ padding: '40px 20px', textAlign: 'center', color: '#ef4444' }}>
+          Error: {error || 'No question loaded'}
+        </div>
+      </div>
+    )
+  }
+
+  const correctId = question.options.find((o) => o.text === question.correctAnswer)?.id
+  const isCorrect = selected === correctId
+
+  const handleSelect = (id: string) => {
+    if (!answered) setSelected(id)
+  }
+
+  const handleCheck = () => {
+    if (selected) setAnswered(true)
+  }
+
+  return (
+    <div className="screen">
+      <div className="header">
+        <button className="back-btn">&#8592;</button>
+        <h1 className="title">{question.topic} &middot; {question.subtopic}</h1>
+        <div className="xp-badge">&#11088; {question.xp} XP</div>
+      </div>
+
+      <div className="progress-section">
+        <div className="progress-labels">
+          <span className="step-label">STEP {question.step} OF {question.totalSteps}</span>
+          <span className="complete-label">{Math.round((question.step / question.totalSteps) * 100)}% Complete</span>
+        </div>
+        <div className="progress-track">
+          <div className="progress-fill" style={{ width: `${(question.step / question.totalSteps) * 100}%` }} />
+        </div>
+      </div>
+
+      <div className="card">
+        <p className="question-text">{renderInlineCode(question.question)}</p>
+
+        {question.code && (
+          <div className="code-block">
+            <div className="code-dots">
+              <span className="dot dot-red" />
+              <span className="dot dot-yellow" />
+              <span className="dot dot-green" />
+            </div>
+            <pre className="code-pre">
+              <code>{question.code}</code>
+            </pre>
+          </div>
+        )}
+
+        <div className="options">
+          {question.options.map((opt) => {
+            const isSelected = selected === opt.id
+            const isRight = opt.id === correctId
+            let cls = 'option'
+            if (answered && isSelected) cls += isRight ? ' correct' : ' wrong'
+            else if (isSelected) cls += ' selected'
+            return (
+              <button key={opt.id} className={cls} onClick={() => handleSelect(opt.id)}>
+                <span className="opt-id">{opt.id}</span>
+                <span className="opt-text">{opt.text}</span>
+                {answered && isSelected && isRight && (
+                  <span className="opt-check">&#10003;</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {!answered ? (
+        <button className="check-btn" onClick={handleCheck} disabled={!selected}>
+          Check Answer
+        </button>
+      ) : (
+        <div className={`feedback ${isCorrect ? 'fb-correct' : 'fb-wrong'}`}>
+          <div className="fb-row">
+            <span className="fb-icon">{isCorrect ? '✓' : '✗'}</span>
+            <span className="fb-title">{isCorrect ? 'Correct!' : 'Incorrect'}</span>
+          </div>
+          <p className="fb-text">{question.correctExplanation}</p>
+          <button className="next-btn">Next question &#8594;</button>
+        </div>
+      )}
+    </div>
+  )
+}
