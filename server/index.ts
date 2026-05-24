@@ -18,7 +18,23 @@ interface StoredQuestion {
   totalSteps: number
 }
 
-let currentQuestion: StoredQuestion | null = null
+let currentQuestion: StoredQuestion | null = {
+  question: 'What does the `typeof` operator return for an undeclared variable?',
+  code: 'console.log(typeof undeclaredVar)',
+  options: [
+    { id: 'A', text: '"undefined"', explanation: 'Correct — typeof safely returns "undefined" for undeclared variables instead of throwing a ReferenceError.' },
+    { id: 'B', text: '"null"', explanation: 'null is a distinct type; typeof null returns "object" due to a historical quirk in JavaScript.' },
+    { id: 'C', text: 'It throws a ReferenceError', explanation: 'typeof is special-cased to not throw for undeclared variables — unlike directly accessing them.' },
+    { id: 'D', text: '"unknown"', explanation: '"unknown" is a TypeScript type, not a value returned by the typeof operator at runtime.' },
+  ],
+  correctAnswer: '"undefined"',
+  correctExplanation: 'typeof returns the string "undefined" for undeclared variables. This makes it a safe way to check whether a variable exists without risking a ReferenceError.',
+  topic: 'JavaScript',
+  subtopic: 'Types & Operators',
+  xp: 100,
+  step: 1,
+  totalSteps: 10,
+}
 
 interface QuestionBody {
   question: string
